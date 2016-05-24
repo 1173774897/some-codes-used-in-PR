@@ -1,0 +1,58 @@
+#!/bin/bash
+LANG=UTF-8
+file1=$1
+file2=$2
+fieldNumberlist=$3
+#deltmpfiles=${4:-'N'}
+echo "                                   File1: ${file1}"
+echo "                                   File2: ${file2}"
+echo "                                   FieldNum: ${fieldNumberlist}"
+#echo "                                   DeletTmpFilesAfterDone: ${deltmpfiles}"i
+cutfield1="/tmp/cutfield1"
+cutfield2="/tmp/cutfield2"
+resultfile="/tmp/comparingresult"
+OLD_IFS="$IFS"
+IFS=","
+fieldNumArr=($fieldNumberlist)
+IFS="$OLD_IFS"
+echo "Result: ${resultfile}"
+echo "Comparing Started" > ${resultfile}
+for fieldNumber in ${fieldNumArr[@]} ; do
+        echo "***********************Processing field ${fieldNumber}**********************"
+        echo "***********************Processing field ${fieldNumber}**********************" >> ${resultfile}
+        awk -F '\t' '{print $fieldNumber}' fieldNumber=${fieldNumber} ${file1} > ${cutfield1}
+        awk -F '\t' '{print $'$fieldNumber'}' "${file2}" > ${cutfield2}
+        #cutfield1=`awk -F '\t' '{print $fieldNumber}' fieldNumber=${fieldNumber} ${file1}`
+        #cutfield2=`awk -F '\t' '{print $'$fieldNumber'}' "${file2}"`
+        lineCount1=`wc -l ${cutfield1} | awk '{print $1}'`
+        lineCount2=`wc -l ${cutfield2} | awk '{print $1}'`
+        if [[ ${lineCount1} > ${lineCount2} ]]; then
+                lineCount=${lineCount1}
+                echo "File1's longger : ${lineCount}" 
+        else
+                if [[ ${lineCount1} == ${lineCount2} ]]; then
+                        lineCount=${lineCount1}
+                        echo "Same number of Lines : ${lineCount}" 
+                else
+                        lineCount=${lineCount2}
+                        echo "File2's longger: ${lineCount}"
+                fi
+        fi
+        for (( i=1; i<${lineCount}+1; i++ )); do
+                line1=`awk 'NR=='${i}'{print}' "${cutfield1}"`
+                line2=`awk 'NR=='${i}'{print}' "${cutfield2}"`
+                if [[ ${line1:-''} = ${line2:-''} ]] ;then
+                        continue
+                else
+                        echo "Spotted difference on line ${i} File1 : ${line1:-''} / File2 : ${line2:-''}"
+                        echo "Spotted difference on line ${i} File1 : ${line1:-''} / File2 : ${line2:-''}" >> ${resultfile}
+                fi
+        done
+#        if [[ ${deltmpfiles} = "Y" ]] ; then
+#        echo "deleting tmpfiles"
+        rm ${cutfield1}
+        rm ${cutfield2}
+#        fi
+        echo "Done Comparing"
+        echo "Done Comparing" >> ${resultfile}
+done
